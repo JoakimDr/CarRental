@@ -3,7 +3,6 @@
     public record PickupRequest(
         string BookingNumber,
         string CarRegistrationNumber,
-        string CustomerSSN,
         CarCategory CarCategory,
         DateTime PickupTime,
         int CurrentMeterReading

@@ -2,6 +2,7 @@
 using CarRental.Features.Rentals.Validation;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace CarRental.Features.Rentals;
 
@@ -13,12 +14,19 @@ public static class RentalEndpoints
 
         group.MapPost("/pickup", async (
                 PickupRequest request,
-                RentalService service
+                RentalService service,
+                ClaimsPrincipal user
             ) =>
         {
+            var nationalIdFromJwt = user.FindFirst("nationalid")?.Value;
+
+            if (string.IsNullOrEmpty(nationalIdFromJwt)) {
+                return Results.Forbid();
+            }
+
             try
             {
-                var result = await service.ProcessPickupAsync(request);
+                var result = await service.ProcessPickupAsync(request, nationalIdFromJwt);
                 return Results.Created($"/rentals/{result.BookingNumber}", result);
             }
             catch (ValidationException ex)
@@ -32,12 +40,19 @@ public static class RentalEndpoints
 
         group.MapPost("/return", async (
                 ReturnRequest request,
-                RentalService service
+                RentalService service,
+                ClaimsPrincipal user
             ) =>
         {
+            var nationalIdFromJwt = user.FindFirst("nationalid")?.Value;
+
+            if (string.IsNullOrEmpty(nationalIdFromJwt)) {
+                return Results.Forbid();
+            }
+
             try
             {
-                var price = await service.ProcessReturnAsync(request);
+                var price = await service.ProcessReturnAsync(request, nationalIdFromJwt);
                 return Results.Ok(new ReturnResponse("Bilen har återlämnats", price));
 
             }

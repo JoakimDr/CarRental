@@ -8,7 +8,7 @@ namespace CarRental.Features.Rentals;
 
 public class RentalService(CarRentalDbContext context, PriceCalculationService priceService, IValidator<PickupRequest> pickupValidator, ILogger<RentalService> logger)
 {
-    public async Task<RentalRecord> ProcessPickupAsync(PickupRequest request)
+    public async Task<RentalRecord> ProcessPickupAsync(PickupRequest request, string nationalIdFromJwt)
     {
         var validationResult = await pickupValidator.ValidateAsync(request);
         if (!validationResult.IsValid){
@@ -28,7 +28,7 @@ public class RentalService(CarRentalDbContext context, PriceCalculationService p
         {
             BookingNumber = request.BookingNumber,
             CarRegistrationNumber = request.CarRegistrationNumber,
-            CustomerSSN = request.CustomerSSN,
+            CustomerSSN = nationalIdFromJwt,
             CarCategory = request.CarCategory,
             PickupTime = request.PickupTime,
             MileagePickup = request.CurrentMeterReading
@@ -43,13 +43,19 @@ public class RentalService(CarRentalDbContext context, PriceCalculationService p
 
     }
 
-    public async Task<decimal> ProcessReturnAsync(ReturnRequest request)
+    public async Task<decimal> ProcessReturnAsync(ReturnRequest request, string nationalIdFromJwt)
     {
         var rental = await context.Rentals.FirstOrDefaultAsync(r => r.BookingNumber == request.BookingNumber && r.Status == RentalStatus.Active);
         if(rental == null)
         {
             logger.LogError("Återlämning misslyckades. Aktiv bokning {bookingnumber} hittades inte i databasen", request.BookingNumber);
             throw new KeyNotFoundException("Bokningen hittades inte");
+        }
+
+        if(rental.CustomerSSN != nationalIdFromJwt)
+        {
+            logger.LogWarning("Säkerhetsöverträdelse. Användare med personnummer {jwtId} försökte återlämna bil bokad av {rentalRecordId}", nationalIdFromJwt, rental.CustomerSSN);
+            throw new UnauthorizedAccessException("Du kan endast återlämna bilar som du själv har bokat.");
         }
 
         var validator = new ReturnRequestValidator(rental);

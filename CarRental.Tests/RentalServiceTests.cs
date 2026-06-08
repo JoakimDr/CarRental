@@ -53,10 +53,10 @@ namespace CarRental.Tests
         public async Task Pickup_Should_Save_Rental_To_Database()
         {
             // Arrange
-            var request = new PickupRequest("99", "ABC123", "19700101-1234", CarCategory.Small, DateTime.UtcNow, 1000);
+            var request = new PickupRequest("99", "ABC123",  CarCategory.Small, DateTime.UtcNow, 1000);
 
             // Act
-            var result = await _service.ProcessPickupAsync(request);
+            var result = await _service.ProcessPickupAsync(request, "123");
 
             // Assert
             result.BookingNumber.Should().Be("99");
@@ -83,8 +83,58 @@ namespace CarRental.Tests
             var fakeRequest = new ReturnRequest("99", DateTime.UtcNow, 49999);
 
             //Act
-            Func<Task> act = async () => await _service.ProcessReturnAsync(fakeRequest);
+            Func<Task> act = async () => await _service.ProcessReturnAsync(fakeRequest, "19700101-1234");
             await act.Should().ThrowAsync<FluentValidation.ValidationException>();
         }
+
+        [Test]
+        public async Task Return_With_Matching_nationalid_Should_Succeed()
+        {
+            var rental = new RentalRecord {
+                BookingNumber = "BOK-OK",
+                CarRegistrationNumber = "ABC123",
+                CustomerSSN = "19700501-1234",
+                CarCategory = CarCategory.Small,
+                PickupTime = DateTime.UtcNow.AddDays(-2),
+                MileagePickup = 1000
+            };
+
+            _context.Rentals.Add(rental);
+
+            await _context.SaveChangesAsync();
+
+            var req = new ReturnRequest("BOK-OK", DateTime.UtcNow, 1200);
+
+            Func<Task> act = async () => await _service.ProcessReturnAsync(req, "19700501-1234");
+
+            await act.Should().NotThrowAsync();
+        }
+
+        [Test]
+        public async Task Return_With_Different_Nationalid_Should_Throw_UnauthorizedException()
+        {
+            var rental = new RentalRecord
+            {
+                BookingNumber = "BOK-OK",
+                CarRegistrationNumber = "ABC123",
+                CustomerSSN = "19700501-1234",
+                CarCategory = CarCategory.Small,
+                PickupTime = DateTime.UtcNow.AddDays(-2),
+                MileagePickup = 1000
+            };
+
+            _context.Rentals.Add(rental);
+
+            await _context.SaveChangesAsync();
+
+            var req = new ReturnRequest("BOK-OK", DateTime.UtcNow, 1200);
+
+            Func<Task> act = async () => await _service.ProcessReturnAsync(req, "19800501-1234");
+
+            await act.Should().ThrowAsync<UnauthorizedAccessException>()
+                .WithMessage("Du kan endast återlämna bilar som du själv har bokat.");
+
+        }
+
     }
 }

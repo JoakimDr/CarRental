@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="readme.md" />
+  </Folder>
   <Project Path="CarRental.Tests/CarRental.Tests.csproj" />
   <Project Path="CarRental/CarRental.csproj" />
 </Solution>

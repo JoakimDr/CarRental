@@ -27,7 +27,6 @@ public class ValidationTests
         (
             "BOK-1",
             "ABC1234",
-            "19700501-1234",
             CarCategory.Small,
             DateTime.UtcNow,
             1000
