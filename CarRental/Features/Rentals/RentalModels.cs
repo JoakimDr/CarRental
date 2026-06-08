@@ -3,10 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CarRental.Features.Rentals
 {
-    public class RentalModels
-    {
-    }
-
     public enum CarCategory
     {
         Small,
