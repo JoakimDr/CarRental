@@ -4,7 +4,7 @@
 1. Starta applikationen i Visual Studio
 2.Apiet körs på din lokala HTTPS-port som du ser i `Properties\launchsettings.json`
 
-Kör en klient, t ex Bruno eller använd scalar på adressen https://localhost:<din lokala port>/scalar/v1
+Kör en klient, t ex Bruno eller använd scalar på adressen https://localhost:din lokala port/scalar/v1
 
 ## JWT säkerhet
 Alla rental endpoints kräver en giltig JWT innehållande bokarens personummer.
